@@ -21,6 +21,7 @@ public class MainActivity extends Activity {
     private static final int TEXT=Color.rgb(238,243,255), MUTED=Color.rgb(143,158,185), CYAN=Color.rgb(39,220,231), PURPLE=Color.rgb(155,91,255), BLUE=Color.rgb(53,145,255);
     private LinearLayout root, content, terminalLog, bottomNav;
     private TextView status, pathLabel, terminalText;
+    private final StringBuilder terminalBuffer=new StringBuilder();
     private EditText commandInput;
     private ScrollView terminalScroll;
     private File cwd, knownHosts;
@@ -104,7 +105,7 @@ public class MainActivity extends Activity {
         content.addView(modes,lp(-1,42));
         LinearLayout panel=column();panel.setBackground(shape(Color.rgb(3,7,16),Color.rgb(29,51,79),16));pad(panel,12,12,12,10);
         terminalScroll=new ScrollView(this);terminalScroll.setFillViewport(true);
-        terminalText=label("",12,Color.rgb(207,225,246),false);terminalText.setTypeface(android.graphics.Typeface.MONOSPACE);terminalText.setTextIsSelectable(true);terminalText.setLineSpacing(dp(3),1f);
+        terminalText=label(terminalBuffer.toString(),12,Color.rgb(207,225,246),false);terminalText.setTypeface(android.graphics.Typeface.MONOSPACE);terminalText.setTextIsSelectable(true);terminalText.setLineSpacing(dp(3),1f);
         terminalScroll.addView(terminalText);panel.addView(terminalScroll,new LinearLayout.LayoutParams(-1,0,1));
         content.addView(panel,new LinearLayout.LayoutParams(-1,0,1));
         LinearLayout inputRow=row();inputRow.setPadding(0,dp(10),0,dp(6));
@@ -114,10 +115,15 @@ public class MainActivity extends Activity {
         TextView go=action("➤",this::runCommand);LinearLayout.LayoutParams gp=lp(54,48);gp.leftMargin=dp(8);inputRow.addView(go,gp);content.addView(inputRow);
         LinearLayout quick=row();String[] cmds=mode.equals("Android")?new String[]{"pwd","ls","cd","whoami"}:new String[]{"help","dir","cd","systeminfo"};
         for(String c:cmds){TextView q=action(c,()->{commandInput.setText(c);runCommand();});LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,dp(36),1);p.rightMargin=dp(5);quick.addView(q,p);}content.addView(quick,lp(-1,40));
-        TextView clear=label("Clear output     ·     History: "+history.size(),10,MUTED,false);clear.setGravity(Gravity.END);clear.setOnClickListener(v->{terminalText.setText("");});content.addView(clear);
+        TextView clear=label("Clear output     ·     History: "+history.size(),10,MUTED,false);clear.setGravity(Gravity.END);clear.setOnClickListener(v->clearTerminal());content.addView(clear);
     }
     private void appendTerminal(String s){
-        if(terminalText!=null){terminalText.append(s);if(terminalScroll!=null)terminalScroll.post(()->terminalScroll.fullScroll(View.FOCUS_DOWN));}
+        terminalBuffer.append(s);
+        if(terminalText!=null){terminalText.setText(terminalBuffer.toString());if(terminalScroll!=null)terminalScroll.post(()->terminalScroll.fullScroll(View.FOCUS_DOWN));}
+    }
+    private void clearTerminal(){
+        terminalBuffer.setLength(0);
+        if(terminalText!=null)terminalText.setText(\"\");
     }
     private void runCommand(){
         if(commandInput==null)return;String cmd=commandInput.getText().toString().trim();if(cmd.isEmpty())return;
@@ -148,7 +154,7 @@ public class MainActivity extends Activity {
     private String runCompat(String raw,String selected){
         String c=raw.trim(),l=c.toLowerCase(Locale.ROOT);
         if(l.equals("help")||l.equals("get-help"))return helpText();
-        if(l.equals("cls")||l.equals("clear")){runOnUiThread(()->{if(terminalText!=null)terminalText.setText("");});return "";}
+        if(l.equals("cls")||l.equals("clear")){runOnUiThread(this::clearTerminal);return "";}
         if(l.equals("pwd")||l.equals("cd"))return cwd.getAbsolutePath();
         if(l.equals("dir")||l.equals("ls")||l.equals("get-childitem")){
             File[] fs=cwd.listFiles();if(fs==null)return "Directory unavailable.";
@@ -245,7 +251,7 @@ public class MainActivity extends Activity {
         setting("Workspace","App-private storage · "+cwd.getAbsolutePath());
         setting("Security","SSH host key verification is required");
         setting("About","MDE Mobile Terminal · Version 1.1");
-        TextView reset=action("Reset terminal output",()->{showTab("Terminal");if(terminalText!=null)terminalText.setText("");});LinearLayout.LayoutParams p=lp(-1,44);p.topMargin=dp(12);content.addView(reset,p);
+        TextView reset=action("Reset terminal output",()->{clearTerminal();showTab("Terminal");});LinearLayout.LayoutParams p=lp(-1,44);p.topMargin=dp(12);content.addView(reset,p);
     }
     private void setting(String title,String sub){LinearLayout item=column();item.addView(label(title,14,TEXT,true));TextView t=label(sub,11,MUTED,false);pad(t,0,4,0,0);item.addView(t);pad(item,13,11,13,11);item.setBackground(shape(SURFACE,Color.rgb(30,47,75),14));LinearLayout.LayoutParams p=lp(-1,-2);p.topMargin=dp(8);content.addView(item,p);}
     private void showCommandPalette(){

@@ -123,7 +123,7 @@ public class MainActivity extends Activity {
     }
     private void clearTerminal(){
         terminalBuffer.setLength(0);
-        if(terminalText!=null)terminalText.setText(\"\");
+        if(terminalText!=null)terminalText.setText("");
     }
     private void runCommand(){
         if(commandInput==null)return;String cmd=commandInput.getText().toString().trim();if(cmd.isEmpty())return;

@@ -136,7 +136,7 @@ public class MainActivity extends Activity {
         }).start();
     }
     private String runAndroidShell(String cmd){
-        Process p=null;
+        java.lang.Process p=null;
         try{
             p=new ProcessBuilder("/system/bin/sh","-c",cmd).directory(cwd).redirectErrorStream(true).start();
             ByteArrayOutputStream out=new ByteArrayOutputStream();InputStream in=p.getInputStream();byte[] b=new byte[4096];long end=System.currentTimeMillis()+15000;
